@@ -1,69 +1,46 @@
 const express = require('express');
 require('dotenv').config();
 const server = express();
-const { eachDayOfInterval, isWithinInterval } = require('date-fns');
+const { eachDayOfInterval } = require('date-fns');
+const { Hotel, Quarto, Reserva } = require('./classes/Classes.js');
 
 server.use(express.json());
-
-const hoteis = [
-    {
-        id: 1,
-        nome: "Habbo Hotel",
-        localizacao: "Rio Verde",
-        quartos: [
-            { 
-                id: 1,
-                tipo: "Solteiro",
-                disponibilidade: { 
-                    start: new Date("2024-1-1"),
-                    end: new Date("2024-5-1") 
-                }
-            },
-            {
-                id: 2,
-                tipo: "Casal",
-                disponibilidade: {
-                    start: new Date("2024-1-1"),
-                    end: new Date("2024-7-1")
-                }
-            }
-        ]
-    },
-    {
-        id: 2,
-        nome: "Pineapple Hotel",
-        localizacao: "Rio de Janeiro",
-        quartos: [
-            { 
-                id: 1,
-                tipo: "Solteiro",
-                disponibilidade: { 
-                    start: new Date("2024-3-1"),
-                    end: new Date("2024-4-25") 
-                }
-            },
-            {
-                id: 2,
-                tipo: "Casal",
-                disponibilidade: {
-                    start: new Date("2024-10-6"),
-                    end: new Date("2024-12-15")
-                }
-            }
-        ]
-    }
-]
 
 const porta = process.env.PORT
 const hostname = process.env.HOSTNAME
 
-function estaDisponivel(intervaloContido, intervaloPai) {
-    for (let data of intervaloContido) {   
-        if (!isWithinInterval(data, intervaloPai)) {
-            return false;
+const arrayDisponibilidadeAnual = eachDayOfInterval({ start: new Date(`${(anoAtual())}-1-1`), end: new Date(`${(anoAtual())}-12-31`) });
+
+const hoteis = [
+    new Hotel(1, "Habbo Hotel", "Rio Verde", [
+        new Quarto(1, arrayDisponibilidadeAnual, []),
+        new Quarto(2, arrayDisponibilidadeAnual, [])
+    ]),
+    new Hotel(2, "Pineapple Hotel", "Rio de Janeiro", [
+        new Quarto(1, arrayDisponibilidadeAnual, []),
+        new Quarto(2, arrayDisponibilidadeAnual, [])
+    ])
+];
+
+function anoAtual() {
+    return new Date().getFullYear();
+}
+
+function estaDisponivel(datasReserva, datasDisponiveis) {
+    for(let i = 0; i < datasReserva.length; i++) {
+
+        let encontrou = false;
+
+        for(let j = 0; j < datasDisponiveis.length; j++) {
+            if(datasReserva[i].getTime() === datasDisponiveis[j].getTime()) {
+                encontrou = true;
+                break;
+            }
         }
+
+        if(!encontrou) return false;
     }
-  
+    
     return true;
 }
 
@@ -101,41 +78,105 @@ function verificaData(data) {
     return true;
 }
 
+function converteArrayStringParaArrayDate(arrayString) {
+    return arrayString.map(data => new Date(data));
+}
+
+function getHotel(idHotel) {
+    const hotel = hoteis.find(hotel => hotel.idHotel === idHotel);
+
+    if(!hotel) return null;
+
+    return hotel;
+}
+
+function getQuarto(hotel, idQuarto) {
+    const quarto = hotel.quartos.find(quarto => quarto.idQuarto === idQuarto);
+
+    if(!quarto) return null;
+
+    return quarto;
+}
+
+function getReserva(quarto, idReserva) {
+    const reserva = quarto.reservas.find(reserva => reserva.idReserva === idReserva);
+
+    if(!reserva) return null;
+
+    return reserva;
+}
+
+function realizarReserva(hotel, quarto, datasReserva) {
+    hotel.atualizarContadorReservas(1)
+
+    const reserva = new Reserva(hotel.contadorReservas, datasReserva);
+    quarto.reservas.push(reserva);
+
+    quarto.disponibilidade = quarto.disponibilidade.filter(dataDisponibilidade => {
+        return !datasReserva.some(dataReserva => dataReserva.getTime() === dataDisponibilidade.getTime());
+    });
+
+    return reserva;
+}
+
+function cancelarReserva(quarto, reserva) {
+    const idReserva = reserva.idReserva;
+
+    quarto.disponibilidade = quarto.disponibilidade.concat(reserva.periodo);
+    quarto.reservas = quarto.reservas.filter(reserva => reserva.idReserva !== idReserva);
+}
+
 server.post('/hoteis', function(req, res) {
     const { localizacao, data } = req.body;
 
-    if(!localizacao && !data) {
-        return res.status(400).json({ message: "Parâmetro obrigatório não informado." });
-    }
+    if(!data) return res.status(400).json({ message: "ERRO! Parâmetro obrigatório não informado." });
 
     let copiaHoteis = JSON.parse(JSON.stringify(hoteis));
     let hoteisFiltrados;
 
-    if(localizacao) {
+    if(localizacao && data) {
         hoteisFiltrados = copiaHoteis.filter(hotel => hotel.localizacao.toLowerCase() === localizacao.toLowerCase());
-    } else if(data) {
-        if(!verificaData(data.inicio) || !verificaData(data.final)) return res.status(400).json({ message: "Data inválida." });
+
+        if(!verificaData(data.checkin) || !verificaData(data.checkout)) return res.status(400).json({ message: "Data inválida." });
+
+        const arrayDatasReserva = eachDayOfInterval({ start: new Date(data.checkin), end: new Date(data.checkout) });
+
+        hoteisFiltrados = hoteisFiltrados.filter(hotel => {
+            if(hotel.localizacao.toLowerCase() === localizacao.toLowerCase()) {
+                hotel.quartos = hotel.quartos.filter(quarto => {
+                    quarto.disponibilidade = converteArrayStringParaArrayDate(quarto.disponibilidade);
+
+                    return estaDisponivel(arrayDatasReserva, quarto.disponibilidade);
+                });
+                
+                return hotel.quartos.length > 0;
+            }
+        });
+    }
+    else {
+        if(!verificaData(data.checkin) || !verificaData(data.checkout)) return res.status(400).json({ message: "Data inválida." });
         
-        const intervaloRequisicao = eachDayOfInterval({ start: new Date(data.inicio), end: new Date(data.final) });
+        const arrayDatasReserva = eachDayOfInterval({ start: new Date(data.checkin), end: new Date(data.checkout) });
 
         hoteisFiltrados = copiaHoteis.filter(hotel => {
             hotel.quartos = hotel.quartos.filter(quarto => {
-                return estaDisponivel(intervaloRequisicao, quarto.disponibilidade);
+                quarto.disponibilidade = converteArrayStringParaArrayDate(quarto.disponibilidade);
+
+                return estaDisponivel(arrayDatasReserva, quarto.disponibilidade);
             });
             
             return hotel.quartos.length > 0;
         });
-    }
+    } 
 
     let resposta = hoteisFiltrados.map(hotel => {
         return {
-            id: hotel.id,
+            idHotel: hotel.idHotel,
             nome: hotel.nome,
             localizacao: hotel.localizacao,
             quartos: hotel.quartos.map(quarto => {
                 return {
-                    id: quarto.id,
-                    tipo: quarto.tipo
+                    idQuarto: quarto.idQuarto
                 }
             })
         }
@@ -144,10 +185,61 @@ server.post('/hoteis', function(req, res) {
     res.json(resposta);
 });
 
-server.get('/hoteis', function(req, res) {
-    res.json({ message: "Teste de rota." });
+server.post('/reservar', function(req, res) {
+    const { idHotel, idQuarto, data } = req.body;
+
+    if(!idHotel || !idQuarto || !data) {
+        return res.status(400).json({ message: "ERRO! Parâmetro obrigatório não informado." });
+    }
+
+    let hotel = getHotel(idHotel);
+    if(!hotel) {
+        return res.status(400).json({ message: "Hotel não encontrado." });
+    }
+
+    let quarto = getQuarto(hotel, idQuarto);
+    if(!quarto) {
+        return res.status(400).json({ message: "Quarto não encontrado." });
+    }
+
+    if(!verificaData(data.checkin) || !verificaData(data.checkin)) return res.status(400).json({ message: "Data inválida." });
+
+    const arrayDatasReserva = eachDayOfInterval({ start: new Date(data.checkin), end: new Date(data.checkin) });
+    if(!estaDisponivel(arrayDatasReserva, quarto.disponibilidade)) {
+        return res.status(400).json({ message: "Quarto indisponível." })
+    }
+
+    const reserva = realizarReserva(hotel, quarto, arrayDatasReserva);
+    return res.json({ message: "Reserva realizada com sucesso.", idHotel: hotel.idHotel, idQuarto: quarto.idQuarto, idReserva: reserva.idReserva});
+});
+
+server.post('/cancelar', function(req, res) {
+    const { idHotel, idQuarto, idReserva } = req.body;
+
+    if(!idHotel || !idQuarto || !idReserva) {
+        return res.status(400).json({ message: "ERRO! Parâmetro obrigatório não informado." });
+    }
+
+    let hotel = getHotel(idHotel);
+    if(!hotel) {
+        return res.status(400).json({ message: "Hotel não encontrado." });
+    }
+
+    let quarto = getQuarto(hotel, idQuarto);
+    if(!quarto) {
+        return res.status(400).json({ message: "Quarto não encontrado." });
+    }
+
+    let reserva = getReserva(quarto, idReserva);
+    if(!reserva) {
+        return res.status(400).json({ message: "Reserva não encontrada." });
+    }
+
+    cancelarReserva(quarto, reserva);
+
+    return res.json({ message: "Reserva cancelada com sucesso." });
 });
 
 server.listen(porta, hostname, () => {
-    console.log('Rodando: http://localhost:' + porta)
+    console.log(`Rodando: http://localhost:${porta}`)
 });
