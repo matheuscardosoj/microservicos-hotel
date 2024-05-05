@@ -1,7 +1,5 @@
 import nodemailer from 'nodemailer';
-import dotenv from 'dotenv';
-
-dotenv.config({ path: '../.env' });
+import 'dotenv/config';
 
 class SendEmail {
     static transporter = nodemailer.createTransport({
