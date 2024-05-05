@@ -210,7 +210,7 @@ server.post('/reservar', function(req, res) {
     }
 
     const reserva = realizarReserva(hotel, quarto, arrayDatasReserva);
-    return res.json({ message: "Reserva realizada com sucesso.", idHotel: hotel.idHotel, idQuarto: quarto.idQuarto, idReserva: reserva.idReserva});
+    return res.json({ message: "Reserva realizada com sucesso.", hotel: {idHotel: hotel.idHotel, nomeHotel: hotel.nome}, idQuarto: quarto.idQuarto, reserva: {idReserva: reserva.idReserva, checkin: data.checkin, checkout: data.checkout}});
 });
 
 server.post('/cancelar', function(req, res) {
