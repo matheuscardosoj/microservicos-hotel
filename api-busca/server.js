@@ -2,7 +2,7 @@ const express = require('express');
 require('dotenv').config();
 const server = express();
 const { eachDayOfInterval } = require('date-fns');
-const { Hotel, Quarto, Reserva } = require('./classes/Classes.js');
+const { Hotel, Quarto, Reserva } = require('./modules/Classes.js');
 
 server.use(express.json());
 
@@ -241,5 +241,5 @@ server.post('/cancelar', function(req, res) {
 });
 
 server.listen(porta, hostname, () => {
-    console.log(`Rodando: http://localhost:${porta}`)
+    console.log(`Server rodando em: http://localhost:${porta}`)
 });
