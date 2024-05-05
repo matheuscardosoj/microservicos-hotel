@@ -10,17 +10,17 @@ server.use(express.urlencoded({ extended: true }));
 const porta = process.env.PORT;
 const hostname = process.env.HOSTNAME;
 
-server.post('/reservar', async (req, res) => {
-    const { idHotel, idQuarto, data, email } = req.body;
+server.post('/cancelar', async (req, res) => {
+    const { idHotel, idQuarto, idReserva, email } = req.body;
 
-    if(!idHotel && !idQuarto && !data && !email) {
+    if(!idHotel && !idQuarto && !idReserva && !email) {
         return res.send({
             message: "ERRO! Parâmetro obrigatório não informado."
         })
     }
 
     try {
-        const resposta = await fetch('http://localhost:7070/reservar', {
+        const resposta = await fetch('http://localhost:7070/cancelar', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -28,7 +28,7 @@ server.post('/reservar', async (req, res) => {
             body: JSON.stringify({
                 idHotel, 
                 idQuarto,
-                data
+                idReserva
             })
         })
         const dados = await resposta.json()
@@ -37,8 +37,8 @@ server.post('/reservar', async (req, res) => {
             return res.send(dados)
         }
 
-        SendEmail.sendMail(email, 'Confirmação de reserva', new CorpoEmail(dados.hotel.nomeHotel, dados.reserva.idReserva, dados.idQuarto, dados.reserva.checkin, dados.reserva.checkout).getCorpo());
-
+        SendEmail.sendMail(email, 'Cancelamento de reserva', new CorpoEmail(dados.hotel.nomeHotel, dados.reserva.idReserva, dados.idQuarto, dados.reserva.checkin, dados.reserva.checkout).getCorpo());
+        
         res.end(JSON.stringify(dados))
     } 
     catch(error) {

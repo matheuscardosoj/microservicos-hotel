@@ -14,7 +14,7 @@ export default class CorpoEmail {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Confirmação de Reserva</title>
+                <title>Cancelamento de Reserva</title>
                 <style>
                     body {
                         font-family: Arial, sans-serif;
@@ -56,8 +56,8 @@ export default class CorpoEmail {
             </head>
             <body>
                 <div class="container">
-                    <h1>Confirmação de Reserva</h1>
-                    <p>Sua reserva foi concluída com sucesso!</p>
+                    <h1>Cancelamento de Reserva</h1>
+                    <p>Sua reserva foi cancelada com sucesso!</p>
                     <p>Detalhes da reserva:</p>
                     <ul>
                         <li><strong>Hotel:</strong> ${this.nomeHotel}</li>
@@ -66,7 +66,7 @@ export default class CorpoEmail {
                         <li><strong>Data de Check-in:</strong> ${this.checkin}</li>
                         <li><strong>Data de Check-out:</strong> ${this.checkout}</li>
                     </ul>
-                    <p>Para mais informações ou alterações, entre em contato conosco.</p>
+                    <p>Para mais informações, entre em contato conosco.</p>
                     <p>Obrigado por escolher o ${this.nomeHotel}!</p>
                 </div>
             </body>

@@ -126,6 +126,22 @@ function cancelarReserva(quarto, reserva) {
     quarto.reservas = quarto.reservas.filter(reserva => reserva.idReserva !== idReserva);
 }
 
+function capturaData(reserva){
+    const idReserva = reserva.idReserva;
+    const checkin = formatarData(reserva.periodo[0]);
+    const checkout = formatarData(reserva.periodo[reserva.periodo.length-1]);
+
+    return{idReserva, checkin, checkout};
+}
+
+function formatarData(data) {
+    const yyyy = data.getFullYear().toString();
+    const mm = (data.getMonth() + 1).toString();
+    const dd = data.getDate().toString();
+    
+    return yyyy.slice(-4) + '-' + mm + '-' + dd;
+}
+
 server.post('/hoteis', function(req, res) {
     const { localizacao, data } = req.body;
 
@@ -192,19 +208,19 @@ server.post('/reservar', function(req, res) {
         return res.status(400).json({ message: "ERRO! Parâmetro obrigatório não informado." });
     }
 
-    let hotel = getHotel(idHotel);
+    const hotel = getHotel(idHotel);
     if(!hotel) {
         return res.status(400).json({ message: "Hotel não encontrado." });
     }
 
-    let quarto = getQuarto(hotel, idQuarto);
+    const quarto = getQuarto(hotel, idQuarto);
     if(!quarto) {
         return res.status(400).json({ message: "Quarto não encontrado." });
     }
 
     if(!verificaData(data.checkin) || !verificaData(data.checkin)) return res.status(400).json({ message: "Data inválida." });
 
-    const arrayDatasReserva = eachDayOfInterval({ start: new Date(data.checkin), end: new Date(data.checkin) });
+    const arrayDatasReserva = eachDayOfInterval({ start: new Date(data.checkin), end: new Date(data.checkout) });
     if(!estaDisponivel(arrayDatasReserva, quarto.disponibilidade)) {
         return res.status(400).json({ message: "Quarto indisponível." })
     }
@@ -220,24 +236,25 @@ server.post('/cancelar', function(req, res) {
         return res.status(400).json({ message: "ERRO! Parâmetro obrigatório não informado." });
     }
 
-    let hotel = getHotel(idHotel);
+    const hotel = getHotel(idHotel);
     if(!hotel) {
         return res.status(400).json({ message: "Hotel não encontrado." });
     }
 
-    let quarto = getQuarto(hotel, idQuarto);
+    const quarto = getQuarto(hotel, idQuarto);
     if(!quarto) {
         return res.status(400).json({ message: "Quarto não encontrado." });
     }
 
-    let reserva = getReserva(quarto, idReserva);
+    const reserva = getReserva(quarto, idReserva);
     if(!reserva) {
         return res.status(400).json({ message: "Reserva não encontrada." });
     }
 
+    const dadosReserva = capturaData(reserva);
     cancelarReserva(quarto, reserva);
 
-    return res.json({ message: "Reserva cancelada com sucesso." });
+    return res.json({ message: "Reserva Cancelada com sucesso.", hotel: {idHotel: hotel.idHotel, nomeHotel: hotel.nome}, idQuarto: quarto.idQuarto, reserva: {idReserva: reserva.idReserva, checkin: dadosReserva.checkin, checkout: dadosReserva.checkout}});
 });
 
 server.listen(porta, hostname, () => {
