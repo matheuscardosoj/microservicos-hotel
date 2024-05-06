@@ -20,10 +20,11 @@ class SendEmail {
 
         this.transporter.sendMail(mailOptions, (error, info) => {
             if(error) {
-                console.log(error);
-            } else {
-                console.log('Email enviado: ' + info.response);
+                console.log('Erro ao enviar e-mail');
+                return;
             }
+
+            console.log('E-mail enviado com sucesso');
         });
     }
 }

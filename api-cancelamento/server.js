@@ -13,10 +13,8 @@ const hostname = process.env.HOSTNAME;
 server.post('/cancelar', async (req, res) => {
     const { idHotel, idQuarto, idReserva, email } = req.body;
 
-    if(!idHotel && !idQuarto && !idReserva && !email) {
-        return res.send({
-            message: "ERRO! Parâmetro obrigatório não informado."
-        })
+    if(!idHotel || !idQuarto || !idReserva || !email) {
+        return res.status(400).send({ status: 400, message: "ERRO! Parâmetro obrigatório não informado." })
     }
 
     try {
@@ -31,15 +29,16 @@ server.post('/cancelar', async (req, res) => {
                 idReserva
             })
         })
+
         const dados = await resposta.json()
 
-        if (resposta.status != 200) {
+        if (dados.status != 200) {
             return res.send(dados)
         }
 
         SendEmail.sendMail(email, 'Cancelamento de reserva', new CorpoEmail(dados.hotel.nomeHotel, dados.reserva.idReserva, dados.idQuarto, dados.reserva.checkin, dados.reserva.checkout).getCorpo());
         
-        res.end(JSON.stringify(dados))
+        res.status(200).json(dados);
     } 
     catch(error) {
         console.log(error)
@@ -47,5 +46,5 @@ server.post('/cancelar', async (req, res) => {
 });
 
 server.listen(porta, hostname, () => {
-    console.log(`Servidor rodando em http://localhost:${porta}`);
+    console.log(`API de cancelamento rodando em: http://${hostname}:${porta}`)
 });

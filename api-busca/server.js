@@ -1,13 +1,14 @@
-const express = require('express');
-require('dotenv').config();
+import express from 'express';
+import 'dotenv/config';
+import { eachDayOfInterval } from 'date-fns';
+import { Hotel, Quarto, Reserva } from './modules/modules.js';
+
 const server = express();
-const { eachDayOfInterval } = require('date-fns');
-const { Hotel, Quarto, Reserva } = require('./modules/Classes.js');
-
 server.use(express.json());
+server.use(express.urlencoded({ extended: true }));
 
-const porta = process.env.PORT
-const hostname = process.env.HOSTNAME
+const porta = process.env.PORT || 7000
+const hostname = process.env.HOSTNAME || 'localhost';
 
 const arrayDisponibilidadeAnual = eachDayOfInterval({ start: new Date(`${(anoAtual())}-1-1`), end: new Date(`${(anoAtual())}-12-31`) });
 
@@ -44,10 +45,16 @@ function estaDisponivel(datasReserva, datasDisponiveis) {
     return true;
 }
 
-function verificaData(data) {
-    const dia = data.split('-')[2];
-    const mes = data.split('-')[1];
-    const ano = data.split('-')[0];
+function verificaData(dataString) {
+    if(!dataString) return false;
+
+    if(isNaN(new Date(dataString))) return false;
+     
+    const data = new Date(dataString);
+
+    const dia = data.getDate();
+    const mes = data.getMonth() + 1;
+    const ano = data.getFullYear();
 
     const anoAtual = new Date().getFullYear();
 
@@ -76,6 +83,10 @@ function verificaData(data) {
     }
 
     return true;
+}
+
+function converteStringEmData(dataString) {
+    return new Date(dataString);
 }
 
 function converteArrayStringParaArrayDate(arrayString) {
@@ -127,11 +138,10 @@ function cancelarReserva(quarto, reserva) {
 }
 
 function capturaData(reserva){
-    const idReserva = reserva.idReserva;
     const checkin = formatarData(reserva.periodo[0]);
     const checkout = formatarData(reserva.periodo[reserva.periodo.length-1]);
 
-    return{idReserva, checkin, checkout};
+    return{ checkin, checkout };
 }
 
 function formatarData(data) {
@@ -139,7 +149,7 @@ function formatarData(data) {
     const mm = (data.getMonth() + 1).toString();
     const dd = data.getDate().toString();
     
-    return yyyy.slice(-4) + '-' + mm + '-' + dd;
+    return `${dd.padStart(2, '0')}/${mm.padStart(2, '0')}/${yyyy}`;
 }
 
 server.post('/hoteis', function(req, res) {
@@ -202,61 +212,59 @@ server.post('/hoteis', function(req, res) {
 });
 
 server.post('/reservar', function(req, res) {
-    const { idHotel, idQuarto, data } = req.body;
-
-    if(!idHotel || !idQuarto || !data) {
-        return res.status(400).json({ message: "ERRO! Parâmetro obrigatório não informado." });
-    }
+    const { idHotel, idQuarto, data: dataString } = req.body;
+    if(!idHotel || !idQuarto || !dataString) return res.status(400).json({ status: 400, message: "ERRO! Parâmetro obrigatório não informado." });
 
     const hotel = getHotel(idHotel);
-    if(!hotel) {
-        return res.status(400).json({ message: "Hotel não encontrado." });
-    }
+    if(!hotel) return res.status(400).json({ status: 400, message: "Hotel não encontrado." });
+    
 
     const quarto = getQuarto(hotel, idQuarto);
-    if(!quarto) {
-        return res.status(400).json({ message: "Quarto não encontrado." });
-    }
+    if(!quarto) return res.status(400).json({ status: 400, message: "Quarto não encontrado." });
 
-    if(!verificaData(data.checkin) || !verificaData(data.checkin)) return res.status(400).json({ message: "Data inválida." });
+    if(!verificaData(dataString.checkin) || !verificaData(dataString.checkin)) return res.status(400).json({ status: 400, message: "Data inválida." });
 
-    const arrayDatasReserva = eachDayOfInterval({ start: new Date(data.checkin), end: new Date(data.checkout) });
+    const data = { checkin: converteStringEmData(dataString.checkin), checkout: converteStringEmData(dataString.checkout) };
+
+    const arrayDatasReserva = eachDayOfInterval({ start: data.checkin, end: new Date(data.checkout) });
     if(!estaDisponivel(arrayDatasReserva, quarto.disponibilidade)) {
-        return res.status(400).json({ message: "Quarto indisponível." })
+        return res.status(400).json({ status: 400, message: "Quarto indisponível." })
     }
 
     const reserva = realizarReserva(hotel, quarto, arrayDatasReserva);
-    return res.json({ message: "Reserva realizada com sucesso.", hotel: {idHotel: hotel.idHotel, nomeHotel: hotel.nome}, idQuarto: quarto.idQuarto, reserva: {idReserva: reserva.idReserva, checkin: data.checkin, checkout: data.checkout}});
+    const dataReserva = capturaData(reserva);
+
+    return res.status(200).json({ status: 200, message: "Reserva realizada com sucesso.", hotel: {idHotel: hotel.idHotel, nomeHotel: hotel.nome}, idQuarto: quarto.idQuarto, reserva: {idReserva: reserva.idReserva, checkin: dataReserva.checkin, checkout: dataReserva.checkout}});
 });
 
 server.post('/cancelar', function(req, res) {
     const { idHotel, idQuarto, idReserva } = req.body;
 
     if(!idHotel || !idQuarto || !idReserva) {
-        return res.status(400).json({ message: "ERRO! Parâmetro obrigatório não informado." });
+        return res.status(400).json({ status: 400, message: "ERRO! Parâmetro obrigatório não informado." });
     }
 
     const hotel = getHotel(idHotel);
     if(!hotel) {
-        return res.status(400).json({ message: "Hotel não encontrado." });
+        return res.status(400).json({ status: 400, message: "Hotel não encontrado." });
     }
 
     const quarto = getQuarto(hotel, idQuarto);
     if(!quarto) {
-        return res.status(400).json({ message: "Quarto não encontrado." });
+        return res.status(400).json({ status: 400, message: "Quarto não encontrado." });
     }
 
     const reserva = getReserva(quarto, idReserva);
     if(!reserva) {
-        return res.status(400).json({ message: "Reserva não encontrada." });
+        return res.status(400).json({ status: 400, message: "Reserva não encontrada." });
     }
 
-    const dadosReserva = capturaData(reserva);
+    const dataReserva = capturaData(reserva);
     cancelarReserva(quarto, reserva);
 
-    return res.json({ message: "Reserva Cancelada com sucesso.", hotel: {idHotel: hotel.idHotel, nomeHotel: hotel.nome}, idQuarto: quarto.idQuarto, reserva: {idReserva: reserva.idReserva, checkin: dadosReserva.checkin, checkout: dadosReserva.checkout}});
+    return res.status(200).json({ status: 200, message: "Reserva Cancelada com sucesso.", hotel: {idHotel: hotel.idHotel, nomeHotel: hotel.nome}, idQuarto: quarto.idQuarto, reserva: { idReserva: reserva.idReserva, checkin: dataReserva.checkin, checkout: dataReserva.checkout}});
 });
 
 server.listen(porta, hostname, () => {
-    console.log(`Server rodando em: http://localhost:${porta}`)
+    console.log(`API de busca rodando em: http://${hostname}:${porta}`)
 });

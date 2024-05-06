@@ -1,4 +1,4 @@
-class Hotel {
+export class Hotel {
     constructor(idHotel, nome, localizacao, quartos) {
         this.idHotel = idHotel;
         this.nome = nome;
@@ -12,7 +12,7 @@ class Hotel {
     }
 }
 
-class Quarto {
+export class Quarto {
     constructor(idQuarto, disponibilidade, reservas) {
         this.idQuarto = idQuarto;
         this.disponibilidade = disponibilidade;
@@ -20,11 +20,9 @@ class Quarto {
     }
 }
 
-class Reserva {
+export class Reserva {
     constructor(idReserva, periodo) {
         this.idReserva = idReserva;
         this.periodo = periodo;
     }
 }
-
-module.exports = { Hotel, Quarto, Reserva };

@@ -13,10 +13,8 @@ const hostname = process.env.HOSTNAME;
 server.post('/reservar', async (req, res) => {
     const { idHotel, idQuarto, data, email } = req.body;
 
-    if(!idHotel && !idQuarto && !data && !email) {
-        return res.send({
-            message: "ERRO! Parâmetro obrigatório não informado."
-        })
+    if(!idHotel || !idQuarto || !data || !email) {
+        return res.status(400).json({ status: 400, message: "ERRO! Parâmetro obrigatório não informado." });
     }
 
     try {
@@ -25,21 +23,18 @@ server.post('/reservar', async (req, res) => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                idHotel, 
-                idQuarto,
-                data
-            })
-        })
-        const dados = await resposta.json()
+            body: JSON.stringify({ idHotel, idQuarto, data })
+        });
 
-        if (resposta.status != 200) {
-            return res.send(dados)
+        const dados = await resposta.json();
+
+        if (dados.status != 200) {
+            return res.status(200).json(dados);
         }
 
         SendEmail.sendMail(email, 'Confirmação de reserva', new CorpoEmail(dados.hotel.nomeHotel, dados.reserva.idReserva, dados.idQuarto, dados.reserva.checkin, dados.reserva.checkout).getCorpo());
 
-        res.end(JSON.stringify(dados))
+        res.status(200).json(dados);
     } 
     catch(error) {
         console.log(error)
@@ -47,5 +42,5 @@ server.post('/reservar', async (req, res) => {
 });
 
 server.listen(porta, hostname, () => {
-    console.log(`Servidor rodando em http://localhost:${porta}`);
+    console.log(`API de reserva rodando em: http://${hostname}:${porta}`)
 });
