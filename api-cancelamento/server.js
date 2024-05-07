@@ -1,14 +1,14 @@
 import express from 'express';
+import 'dotenv/config';
 import SendEmail from './modules/SendEmail.js';
 import CorpoEmail from './modules/CorpoEmail.js';
-import 'dotenv/config';
+
+const porta = process.env.PORT;
+const hostname = process.env.HOSTNAME;
 
 const server = express();
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
-
-const porta = process.env.PORT;
-const hostname = process.env.HOSTNAME;
 
 server.post('/cancelar', async (req, res) => {
     const { idHotel, idQuarto, idReserva, email } = req.body;

@@ -1,0 +1,236 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API de Busca de Hoteis",
+        "description": "Essa API tem como objetivo gerenciar as informações de hotéis e disponibilidade de quartos.",
+        "contact": {
+            "name": "Matheus Cardoso de Jesus",
+            "email": "matheuscardosoj@outlook.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:7070",
+            "description": "API de teste"
+        }
+    ],
+    "paths": {
+        "/hoteis": {
+            "post": {
+                "summary": "Verificar disponibilidade de quartos",
+                "description": "Verifica a disponibilidade de quartos com base na data (checkin e checkout) e/ou localização informada.",
+                "tags": ["Hoteis"],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "ref": "#/components/schemas/FiltroDisponibilidade"
+                            },
+                            "examples": {
+                                "semLocalizacao": {
+                                    "value": {
+                                        "data": {
+                                            "checkin": "2024-1-1",
+                                            "checkout": "2024-1-5"
+                                        }
+                                    }
+                                },
+                                "comLocalizacao": {
+                                    "value": {
+                                        "data": {
+                                            "checkin": "2024-1-1",
+                                            "checkout": "2024-1-5"
+                                        },
+                                        "localizacao": "Rio Verde"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "400": {
+                        "description": "Error"
+                    },
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }  
+        },
+        "/reservar": {
+            "post": {
+                "summary": "Reservar quarto",
+                "description": "Reserva um quarto de hotel com base no id do hotel, id do quarto e data (checkin e checkout) informados.",
+                "tags": ["Hoteis"],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "ref": "#/components/schemas/Reserva"
+                            },
+                            "example": {
+                                "idHotel": 1,
+                                "idQuarto": 1,
+                                "data": {
+                                    "checkin": "2024-1-1",
+                                    "checkout": "2024-1-5"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "400": {
+                        "description": "Error"
+                    },
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/cancelar": {
+            "post": {
+                "summary": "Cancelar reserva",
+                "description": "Cancela uma reserva de quarto de hotel com base no id do hotel, id do quarto e id da reserva.",
+                "tags": ["Hoteis"],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "ref": "#/components/schemas/ReservaCancelamento"
+                            },
+                            "example": {
+                                "idHotel": 1,
+                                "idQuarto": 1,
+                                "idReserva": 1
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "400": {
+                        "description": "Error"
+                    },
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Data": {
+                "type": "object",
+                "properties": {
+                    "checkin": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Data de checkin, apenas no formato yyyy-MM-dd, valida somente para o ano atual e maior que a data atual",
+                        "example": "2024-10-01"
+                    },
+                    "checkout": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Data de checkout maior que a data de checkin, apenas no formato yyyy-MM-dd",
+                        "example": "2024-10-05"
+                    }
+                },
+                "required": ["checkin", "checkout"]
+            },
+            "Localizacao": {
+                "type": "string",
+                "description": "Localização do hotel",
+                "example": "Rio Verde"
+            },
+            "FiltroDisponibilidade": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/Data"
+                    },
+                    "localizacao": {
+                        "$ref": "#/components/schemas/Localizacao"
+                    }
+                },
+                "required": ["data"]
+            },
+            "Reserva": {
+                "type": "object",
+                "properties": {
+                    "idHotel": {
+                        "type": "integer",
+                        "description": "Id do hotel",
+                        "example": 1
+                    },
+                    "idQuarto": {
+                        "type": "integer",
+                        "description": "Id do quarto",
+                        "example": 1
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/Data"
+                    }
+                },
+                "required": ["idHotel", "idQuarto", "data"]
+            },
+            "ReservaCancelamento": {
+                "type": "object",
+                "properties": {
+                    "idHotel": {
+                        "type": "integer",
+                        "description": "Id do hotel",
+                        "example": 1
+                    },
+                    "idQuarto": {
+                        "type": "integer",
+                        "description": "Id do quarto",
+                        "example": 1
+                    },
+                    "idReserva": {
+                        "type": "integer",
+                        "description": "Id da reserva",
+                        "example": 1
+                    }
+                },
+                "required": ["idHotel", "idQuarto", "idReserva"]
+            },
+            "HotelBusca": {
+                "type": "object",
+                "properties": {
+                    "idHotel": {
+                        "type": "integer",
+                        "description": "Id do hotel",
+                        "example": 1
+                    },
+                    "nome": {
+                        "type": "string",
+                        "description": "Nome do hotel",
+                        "example": "Habbo Hotel"
+                    },
+                    "localizacao": {
+                        "type": "string",
+                        "description": "Localização do hotel",
+                        "example": "Rio Verde"
+                    },
+                    "quartos": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "idQuarto": {
+                                    "type": "integer",
+                                    "description": "Id do quarto",
+                                    "example": 1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

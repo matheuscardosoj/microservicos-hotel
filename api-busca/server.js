@@ -1,14 +1,20 @@
 import express from 'express';
 import 'dotenv/config';
+import swaggerUi from 'swagger-ui-express';
+import { readFile } from 'fs/promises';
+import path from 'path';
 import { eachDayOfInterval } from 'date-fns';
 import { Hotel, Quarto, Reserva } from './modules/modules.js';
+
+const porta = process.env.PORT || 7000
+const hostname = process.env.HOSTNAME || 'localhost';
+
+const swaggerDocument = JSON.parse(await readFile(path.resolve("./swagger.json")));
 
 const server = express();
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
-
-const porta = process.env.PORT || 7000
-const hostname = process.env.HOSTNAME || 'localhost';
+server.use("/documentacao", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const arrayDisponibilidadeAnual = eachDayOfInterval({ start: new Date(`${(anoAtual())}-1-1`), end: new Date(`${(anoAtual())}-12-31`) });
 
@@ -48,24 +54,24 @@ function estaDisponivel(datasReserva, datasDisponiveis) {
 function verificaData(dataString) {
     if(!dataString) return false;
 
-    if(isNaN(new Date(dataString))) return false;
-     
     const data = new Date(dataString);
+
+    if(isNaN(data)) return false;
 
     const dia = data.getDate();
     const mes = data.getMonth() + 1;
     const ano = data.getFullYear();
 
-    const anoAtual = new Date().getFullYear();
+    const dataAtual = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
 
-    if(ano < anoAtual) {
+    if(ano < dataAtual.getFullYear() || ano > dataAtual.getFullYear()){
         return false;
-    } 
+    }
 
     if(mes < 1 || mes > 12) {
         return false;
-    } 
-    
+    }
+
     if(mes === 2) {
         if(dia < 1 || dia > 28) {
             return false;
@@ -76,11 +82,20 @@ function verificaData(dataString) {
         if(dia < 1 || dia > 30) {
             return false;
         }
-    } else {
-        if(dia < 1 || dia > 31) {
-            return false;
-        }
     }
+
+    if(dia < 1 || dia > 31) {
+        return false;
+    }
+
+    return true;
+}
+
+function verificaCheckinCheckout(checkin, checkout) {
+    const dataCheckin = new Date(checkin);
+    const dataCheckout = new Date(checkout);
+
+    if(dataCheckin.getTime() >= dataCheckout.getTime()) return false;
 
     return true;
 }
@@ -91,6 +106,22 @@ function converteStringEmData(dataString) {
 
 function converteArrayStringParaArrayDate(arrayString) {
     return arrayString.map(data => new Date(data));
+}
+
+function filtraHotelPorLocalizacao(hoteis, localizacao) {
+    return hoteis.filter(hotel => hotel.localizacao.toLowerCase() === localizacao.toLowerCase());
+}
+
+function filtraHotelPorData(hoteis, data) {
+    return hoteis.filter(hotel => {
+        hotel.quartos = hotel.quartos.filter(quarto => {
+            quarto.disponibilidade = converteArrayStringParaArrayDate(quarto.disponibilidade);
+
+            return estaDisponivel(data, quarto.disponibilidade);
+        });
+
+        return hotel.quartos.length > 0;
+    });
 }
 
 function getHotel(idHotel) {
@@ -157,45 +188,20 @@ server.post('/hoteis', function(req, res) {
 
     if(!data) return res.status(400).json({ message: "ERRO! Parâmetro obrigatório não informado." });
 
-    let copiaHoteis = JSON.parse(JSON.stringify(hoteis));
-    let hoteisFiltrados;
+    const copiaHoteis = JSON.parse(JSON.stringify(hoteis));
+    let hoteisFiltrados = copiaHoteis;
 
-    if(localizacao && data) {
-        hoteisFiltrados = copiaHoteis.filter(hotel => hotel.localizacao.toLowerCase() === localizacao.toLowerCase());
+    if(!verificaData(data.checkin) || !verificaData(data.checkout)) return res.status(400).json({ message: "Data inválida." });
 
-        if(!verificaData(data.checkin) || !verificaData(data.checkout)) return res.status(400).json({ message: "Data inválida." });
+    if(!verificaCheckinCheckout(data.checkin, data.checkout)) return res.status(400).json({ message: "Data de checkin maior ou igual a data de checkout." });
 
-        const arrayDatasReserva = eachDayOfInterval({ start: new Date(data.checkin), end: new Date(data.checkout) });
+    const arrayDatasReserva = eachDayOfInterval({ start: new Date(data.checkin), end: new Date(data.checkout) });
 
-        hoteisFiltrados = hoteisFiltrados.filter(hotel => {
-            if(hotel.localizacao.toLowerCase() === localizacao.toLowerCase()) {
-                hotel.quartos = hotel.quartos.filter(quarto => {
-                    quarto.disponibilidade = converteArrayStringParaArrayDate(quarto.disponibilidade);
+    if(localizacao) hoteisFiltrados = filtraHotelPorLocalizacao(hoteisFiltrados, localizacao);
 
-                    return estaDisponivel(arrayDatasReserva, quarto.disponibilidade);
-                });
-                
-                return hotel.quartos.length > 0;
-            }
-        });
-    }
-    else {
-        if(!verificaData(data.checkin) || !verificaData(data.checkout)) return res.status(400).json({ message: "Data inválida." });
-        
-        const arrayDatasReserva = eachDayOfInterval({ start: new Date(data.checkin), end: new Date(data.checkout) });
+    hoteisFiltrados = filtraHotelPorData(hoteisFiltrados, arrayDatasReserva);
 
-        hoteisFiltrados = copiaHoteis.filter(hotel => {
-            hotel.quartos = hotel.quartos.filter(quarto => {
-                quarto.disponibilidade = converteArrayStringParaArrayDate(quarto.disponibilidade);
-
-                return estaDisponivel(arrayDatasReserva, quarto.disponibilidade);
-            });
-            
-            return hotel.quartos.length > 0;
-        });
-    } 
-
-    let resposta = hoteisFiltrados.map(hotel => {
+    const resposta = hoteisFiltrados.map(hotel => {
         return {
             idHotel: hotel.idHotel,
             nome: hotel.nome,
@@ -208,7 +214,7 @@ server.post('/hoteis', function(req, res) {
         }
     });
 
-    res.json(resposta);
+    res.status(200).json(resposta);
 });
 
 server.post('/reservar', function(req, res) {
