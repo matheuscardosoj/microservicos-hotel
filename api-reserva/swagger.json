@@ -1,0 +1,96 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API de Reserva de Quarto",
+        "description": "Essa API tem como objetivo gerenciar o processo de reserva de quartos.",
+        "contact": {
+            "name": "Matheus Cardoso de Jesus",
+            "email": "matheuscardosoj@outlook.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:7071",
+            "description": "API de teste"
+        }
+    ],
+    "paths": {
+        "/reservar": {
+            "post": {
+                "summary": "Reservar quarto",
+                "description": "Reserva um quarto de hotel com base no id do hotel, id do quarto e data (checkin e checkout) informados.",
+                "tags": ["Reserva"],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "ref": "#/components/schemas/Reserva"
+                            },
+                            "examples": {
+                                "Padrao": {
+                                    "value": {
+                                        "idHotel": 1,
+                                        "idQuarto": 1,
+                                        "data": {
+                                            "checkin": "2024-1-1",
+                                            "checkout": "2024-1-5"
+                                        },
+                                        "email": "example@gmail.com"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "400": {
+                        "description": "Error"
+                    },
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Data": {
+                "type": "object",
+                "properties": {
+                    "checkin": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Data de checkin"
+                    },
+                    "checkout": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Data de checkout"
+                    }
+                }
+            },
+            "Reserva": {
+                "type": "object",
+                "properties": {
+                    "idHotel": {
+                        "type": "integer",
+                        "description": "Id do hotel"
+                    },
+                    "idQuarto": {
+                        "type": "integer",
+                        "description": "Id do quarto"
+                    },
+                    "data": {
+                        "ref": "#/components/schemas/Data"
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "Email do cliente"
+                    }
+                }
+            }
+        }
+    }
+}
