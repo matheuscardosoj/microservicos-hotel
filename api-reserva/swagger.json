@@ -19,13 +19,31 @@
         "/reservar": {
             "post": {
                 "summary": "Reservar quarto",
-                "description": "Reserva um quarto de hotel com base no id do hotel, id do quarto e data (checkin e checkout) informados.",
+                "description": "Reserva um quarto de hotel com base no id do hotel, id do quarto, data (checkin e checkout) e email informados.",
                 "tags": ["Reserva"],
                 "requestBody": {
                     "content": {
                         "application/json": {
                             "schema": {
-                                "ref": "#/components/schemas/Reserva"
+                                "ref": "#/components/schemas/Reserva",
+                                "required": ["idHotel", "idQuarto", "data", "email"],
+                                "properties": {
+                                    "idHotel": {
+                                        "type": "integer",
+                                        "description": "Id do hotel"
+                                    },
+                                    "idQuarto": {
+                                        "type": "integer",
+                                        "description": "Id do quarto"
+                                    },
+                                    "data": {
+                                        "ref": "#/components/schemas/Data"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "description": "Email do cliente"
+                                    }
+                                }
                             },
                             "examples": {
                                 "Padrao": {
@@ -89,7 +107,8 @@
                         "type": "string",
                         "description": "Email do cliente"
                     }
-                }
+                },
+                "required": ["idHotel", "idQuarto", "data", "email"]
             }
         }
     }

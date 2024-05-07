@@ -1,0 +1,76 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API de Cancelamento de Reserva de Quarto",
+        "description": "Essa API tem como objetivo gerenciar o processo de reserva de quartos.",
+        "contact": {
+            "name": "Matheus Cardoso de Jesus",
+            "email": "matheuscardosoj@outlook.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:7072",
+            "description": "API de teste"
+        }
+    ],
+    "paths": {
+        "/cancelar": {
+            "post": {
+                "summary": "Cancelar reserva de quarto",
+                "description": "Cancela a reserva de um quarto de hotel apartir do id do hotel, id do quarto, id da reserva e email.",
+                "tags": ["Cancelamento de Reserva"],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "ref": "#/components/schemas/CancelamentoReserva"
+                            },
+                            "example": {
+                                "idHotel": 1,
+                                "idQuarto": 1,
+                                "idReserva": 1,
+                                "email": "example@gmail.com"
+                            }     
+                        }
+                    }
+                },
+                "responses": {
+                    "400": {
+                        "description": "Error"
+                    },
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "CancelamentoReserva": {
+                "type": "object",
+                "properties": {
+                    "idHotel": {
+                        "type": "integer",
+                        "description": "Id do hotel"
+                    },
+                    "idQuarto": {
+                        "type": "integer",
+                        "description": "Id do quarto"
+                    },
+                    "idReserva": {
+                        "type": "integer",
+                        "description": "Id da reserva"
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "Email do cliente"
+                    }
+                },
+                "required": ["idHotel", "idQuarto", "idReserva", "email"]
+            }
+        }
+    }
+}

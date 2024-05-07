@@ -1,14 +1,20 @@
 import express from 'express';
 import 'dotenv/config';
+import swaggerUi from 'swagger-ui-express';
+import { readFile } from 'fs/promises';
+import path from 'path';
 import SendEmail from './modules/SendEmail.js';
 import CorpoEmail from './modules/CorpoEmail.js';
 
 const porta = process.env.PORT;
 const hostname = process.env.HOSTNAME;
 
+const swaggerDocument = JSON.parse(await readFile(path.resolve("./swagger.json")));
+
 const server = express();
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
+server.use("/documentacao", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 server.post('/cancelar', async (req, res) => {
     const { idHotel, idQuarto, idReserva, email } = req.body;
