@@ -72,5 +72,31 @@ Esta é uma API RESTful desenvolvida para gerenciar informações sobre hotéis 
     "idQuarto": 1,
     "idReserva": 1
 }
+```
 
+# API de Cancelamento de Reserva de Quarto
 
+Esta API gerencia o processo de cancelamento de reservas de quartos de hotel.
+
+## Rotas
+
+### Cancelar Reserva de Quarto
+
+Esta rota é usada para cancelar a reserva de um quarto de hotel.
+
+- **URL:** `/cancelar`
+- **Método:** POST
+- **Descrição:** Cancela a reserva de um quarto de hotel a partir do ID do hotel, ID do quarto, ID da reserva e email.
+- **Tags:** Cancelamento de Reserva
+
+#### Parâmetros de Requisição
+
+O corpo da requisição deve conter os seguintes parâmetros em formato JSON:
+
+```json
+{
+    "idHotel": 1,
+    "idQuarto": 1,
+    "idReserva": 1,
+    "email": "example@gmail.com"
+}
