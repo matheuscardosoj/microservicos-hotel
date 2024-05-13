@@ -46,40 +46,16 @@ Esta rota é usada para cancelar a reserva de um quarto de hotel.
 
 ### API de Reserva de Hotel
 
-Esta API permite que os usuários façam reservas através de uma requisição POST para o endpoint /reservar.
+Esta API permite que os usuários façam reservas através de uma requisição POST para o endpoint `/reservar`.
 
 ### Endpoints
 
-/reservar (POST)
-Este endpoint permite que os usuários façam uma reserva de quarto de hotel.
+- `/reservar` (POST)
+- Este endpoint permite que os usuários façam uma reserva de quarto de hotel.
 
 ### Parâmetros
 
-idHotel: ID do hotel onde a reserva será feita.
-idQuarto: ID do quarto a ser reservado.
-data: Data da reserva.
-email: Endereço de e-mail do cliente para confirmação da reserva.
-
-Exemplo de requisição
-
-{
-  "idHotel": 123,
-  "idQuarto": 456,
-  "data": "2024-05-20",
-  "email": "cliente@example.com"
-}
-
-Resposta de Sucesso
-
-{
-  "status": 200,
-  "message": "Reserva realizada com sucesso."
-}
-
-Resposta de Erro
-
-{
-  "status": 400,
-  "message": "ERRO! Parâmetro obrigatório não informado."
-}
-
+- idHotel: ID do hotel onde a reserva será feita.
+- idQuarto: ID do quarto a ser reservado.
+- data: Data da reserva.
+- email: Endereço de e-mail do cliente para confirmação da reserva.
