@@ -62,7 +62,7 @@
         "/reservar": {
             "post": {
                 "summary": "Reservar quarto",
-                "description": "Reserva um quarto de hotel com base no id do hotel, id do quarto e data (checkin e checkout) informados.",
+                "description": "Verifica os dados recebidos do serviço de reserva e caso estejam certos realiza ela.",
                 "tags": ["Hoteis"],
                 "requestBody": {
                     "content": {
@@ -94,7 +94,7 @@
         "/cancelar": {
             "post": {
                 "summary": "Cancelar reserva",
-                "description": "Cancela uma reserva de quarto de hotel com base no id do hotel, id do quarto e id da reserva.",
+                "description": "Verifica os dados recebidos do serviço de cancelamento e caso estejam certos realiza ele.",
                 "tags": ["Hoteis"],
                 "requestBody": {
                     "content": {
